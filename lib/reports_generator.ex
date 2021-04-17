@@ -26,10 +26,27 @@ defmodule ReportsGenerator do
     |> Enum.reduce(report_acc(), fn line, report -> sum_values(line, report) end)
   end
 
+  @doc """
+    Para medir o tempo de execução:
+    ex:
+    iex(12)> :timer.tc(fn -> ReportsGenerator.build("report_complete.csv") end)
+    {669864,
+      %{ "foods" => %{ ... } }
+
+    iex(12)> :timer.tc(fn -> ReportsGenerator.build_from_many(["report_1.csv", "report_2.csv", "report_3.csv"]) end)
+    {205248,
+      %{ "foods" => %{ ... } }
+  """
+  def build_from_many(filenames) when not is_list(filenames) do
+    {:error, "Please provide a list of strigs"}
+  end
+
   def build_from_many(filenames) do
-    filenames
+    result = filenames
     |> Task.async_stream(&build/1)
     |> Enum.reduce(report_acc(), fn {:ok, result}, report -> sum_reports(report, result) end)
+
+    {:ok, result}
   end
 
   def fetch_higher_cost(report, option) when option in @options do
